@@ -34,8 +34,8 @@ class BibliothequeApp {
     // ==========================================
     getSettings() {
         const defaults = {
-            partner1: { name: '', password: '', goal: 24 },
-            partner2: { name: '', password: '', goal: 24 },
+            partner1: { name: 'Ian', password: '', goal: 24 },
+            partner2: { name: 'Hannah', password: '', goal: 24 },
             theme: 'light'
         };
         try {
@@ -71,7 +71,7 @@ class BibliothequeApp {
 
     getPartnerName(id) {
         const settings = this.getSettings();
-        return settings[id]?.name || (id === 'partner1' ? 'Partner 1' : 'Partner 2');
+        return settings[id]?.name || (id === 'partner1' ? 'Ian' : 'Hannah');
     }
 
     // ==========================================
@@ -155,10 +155,10 @@ class BibliothequeApp {
     saveSetup(e) {
         e.preventDefault();
         const settings = this.getSettings();
-        settings.partner1.name = document.getElementById('setup-name1').value.trim() || 'Partner 1';
+        settings.partner1.name = document.getElementById('setup-name1').value.trim() || 'Ian';
         settings.partner1.password = document.getElementById('setup-pass1').value;
         settings.partner1.goal = parseInt(document.getElementById('setup-goal1').value) || 24;
-        settings.partner2.name = document.getElementById('setup-name2').value.trim() || 'Partner 2';
+        settings.partner2.name = document.getElementById('setup-name2').value.trim() || 'Hannah';
         settings.partner2.password = document.getElementById('setup-pass2').value;
         settings.partner2.goal = parseInt(document.getElementById('setup-goal2').value) || 24;
 
@@ -175,8 +175,8 @@ class BibliothequeApp {
 
     updateLoginNames() {
         const settings = this.getSettings();
-        document.getElementById('partner1-login-name').textContent = settings.partner1.name || 'Partner 1';
-        document.getElementById('partner2-login-name').textContent = settings.partner2.name || 'Partner 2';
+        document.getElementById('partner1-login-name').textContent = settings.partner1.name || 'Ian';
+        document.getElementById('partner2-login-name').textContent = settings.partner2.name || 'Hannah';
     }
 
     // ==========================================
