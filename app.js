@@ -21,12 +21,8 @@ class BibliothequeApp {
         this.updateLoginNames();
         this.setupStarRating();
         this.setupKeyboardShortcuts();
-
-        // Check if first time — show setup
-        const settings = this.getSettings();
-        if (!settings.partner1.name && !settings.partner2.name) {
-            // First visit — could auto-show setup, but let them explore first
-        }
+        this.setupAutocomplete();
+        this.searchCache = {};
     }
 
     // ==========================================
@@ -222,12 +218,15 @@ class BibliothequeApp {
             case 'challenges': main.innerHTML = this.renderChallenges(); break;
             case 'joint': main.innerHTML = this.renderJoint(); break;
             case 'recap': main.innerHTML = this.renderRecap(); break;
+            case 'recommendations': main.innerHTML = this.renderRecommendations(); break;
             case 'data': main.innerHTML = this.renderDataPage(); break;
         }
 
-        // Post-render: initialize charts
+        // Post-render: initialize charts, autocomplete, and async content
         requestAnimationFrame(() => {
             this.initChartsForPage(page);
+            if (page === 'recommendations') this.loadRecommendations();
+            if (page === 'add-book') this.setupPageAutocomplete();
         });
 
         window.scrollTo(0, 0);
@@ -455,6 +454,331 @@ class BibliothequeApp {
 
     closeCoverModal() {
         document.getElementById('cover-modal').style.display = 'none';
+    }
+
+    // ==========================================
+    // AUTOCOMPLETE — Auto-fill book details
+    // ==========================================
+    setupAutocomplete() {
+        // Modal title input
+        const titleInput = document.getElementById('book-title');
+        if (titleInput) {
+            titleInput.addEventListener('input', this.debounce((e) => {
+                this.handleTitleSearch(e.target.value, 'book-title-dropdown', 'modal');
+            }, 400));
+            titleInput.addEventListener('focus', () => {
+                const dd = document.getElementById('book-title-dropdown');
+                if (dd && dd.children.length > 0) dd.style.display = 'block';
+            });
+        }
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.autocomplete-wrapper')) {
+                document.querySelectorAll('.autocomplete-dropdown').forEach(d => d.style.display = 'none');
+            }
+        });
+    }
+
+    setupPageAutocomplete() {
+        // For dynamically rendered Add Book page
+        const qaTitle = document.getElementById('qa-title');
+        if (qaTitle) {
+            qaTitle.addEventListener('input', this.debounce((e) => {
+                this.handleTitleSearch(e.target.value, 'qa-title-dropdown', 'page');
+            }, 400));
+            qaTitle.addEventListener('focus', () => {
+                const dd = document.getElementById('qa-title-dropdown');
+                if (dd && dd.children.length > 0) dd.style.display = 'block';
+            });
+        }
+    }
+
+    async handleTitleSearch(query, dropdownId, formType) {
+        const dropdown = document.getElementById(dropdownId);
+        if (!dropdown) return;
+
+        query = query.trim();
+        if (query.length < 3) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        dropdown.innerHTML = '<div class="autocomplete-loading">Searching books...</div>';
+        dropdown.style.display = 'block';
+
+        // Check cache
+        const cacheKey = query.toLowerCase();
+        if (this.searchCache[cacheKey]) {
+            this.renderAutocompleteResults(this.searchCache[cacheKey], dropdown, formType);
+            return;
+        }
+
+        try {
+            const resp = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=8&fields=title,author_name,cover_i,number_of_pages_median,first_publish_year,subject,key`);
+            const data = await resp.json();
+
+            if (!data.docs || data.docs.length === 0) {
+                dropdown.innerHTML = '<div class="autocomplete-loading">No books found</div>';
+                return;
+            }
+
+            this.searchCache[cacheKey] = data.docs.slice(0, 8);
+            this.renderAutocompleteResults(data.docs.slice(0, 8), dropdown, formType);
+        } catch {
+            dropdown.innerHTML = '<div class="autocomplete-loading">Search failed</div>';
+        }
+    }
+
+    renderAutocompleteResults(docs, dropdown, formType) {
+        dropdown.innerHTML = docs.map((d, i) => {
+            const author = d.author_name ? d.author_name[0] : 'Unknown';
+            const pages = d.number_of_pages_median || '';
+            const year = d.first_publish_year || '';
+            const coverUrl = d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-S.jpg` : '';
+            const coverHtml = coverUrl ? `<img src="${coverUrl}" alt="" loading="lazy">` : '';
+            const meta = [author, pages ? `${pages} pages` : '', year].filter(Boolean).join(' · ');
+
+            return `<div class="autocomplete-item" data-index="${i}" onclick='app.selectAutocompleteBook(${JSON.stringify({
+                title: d.title,
+                author: author,
+                pages: d.number_of_pages_median || 0,
+                cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : '',
+                subjects: d.subject ? d.subject.slice(0, 5) : [],
+                key: d.key || ''
+            }).replace(/'/g, "&#39;")}, "${formType}")'>
+                <div class="autocomplete-item-cover">${coverHtml}</div>
+                <div class="autocomplete-item-info">
+                    <div class="autocomplete-item-title">${this.escapeHtml(d.title)}</div>
+                    <div class="autocomplete-item-meta">${this.escapeHtml(meta)}</div>
+                </div>
+            </div>`;
+        }).join('');
+        dropdown.style.display = 'block';
+    }
+
+    selectAutocompleteBook(book, formType) {
+        // Determine which form to fill
+        const prefix = formType === 'modal' ? 'book' : 'qa';
+
+        document.getElementById(`${prefix}-title`).value = book.title;
+        document.getElementById(`${prefix}-author`).value = book.author;
+        if (book.pages > 0) {
+            document.getElementById(`${prefix}-pages`).value = book.pages;
+        }
+        if (book.cover) {
+            document.getElementById(`${prefix}-cover`).value = book.cover;
+        }
+
+        // Try to map subjects to genres
+        const genre = this.mapSubjectsToGenre(book.subjects);
+        if (genre) {
+            document.getElementById(`${prefix}-genre`).value = genre;
+        }
+
+        // Close dropdown
+        document.querySelectorAll('.autocomplete-dropdown').forEach(d => d.style.display = 'none');
+        this.showToast(`Auto-filled: ${book.title}`);
+    }
+
+    mapSubjectsToGenre(subjects) {
+        if (!subjects || subjects.length === 0) return '';
+        const text = subjects.join(' ').toLowerCase();
+        const genreMap = [
+            { keywords: ['science fiction', 'sci-fi', 'dystopia', 'space', 'cyberpunk'], genre: 'Sci-Fi' },
+            { keywords: ['fantasy', 'magic', 'dragon', 'wizard', 'mythical'], genre: 'Fantasy' },
+            { keywords: ['mystery', 'detective', 'crime', 'murder'], genre: 'Mystery' },
+            { keywords: ['thriller', 'suspense', 'espionage'], genre: 'Thriller' },
+            { keywords: ['romance', 'love story', 'love'], genre: 'Romance' },
+            { keywords: ['horror', 'ghost', 'vampire', 'supernatural'], genre: 'Horror' },
+            { keywords: ['biography', 'autobiography'], genre: 'Biography' },
+            { keywords: ['memoir'], genre: 'Memoir' },
+            { keywords: ['self-help', 'personal development', 'self improvement', 'productivity'], genre: 'Self-Help' },
+            { keywords: ['history', 'historical', 'world war', 'ancient', 'civilization'], genre: 'History' },
+            { keywords: ['science', 'physics', 'biology', 'chemistry', 'evolution'], genre: 'Science' },
+            { keywords: ['philosophy', 'ethics', 'existential'], genre: 'Philosophy' },
+            { keywords: ['poetry', 'poems'], genre: 'Poetry' },
+            { keywords: ['business', 'entrepreneurship', 'management', 'economics'], genre: 'Business' },
+            { keywords: ['psychology', 'mental', 'behavioral', 'cognitive'], genre: 'Psychology' },
+            { keywords: ['travel', 'adventure'], genre: 'Travel' },
+            { keywords: ['cooking', 'cookbook', 'food', 'recipe'], genre: 'Cooking' },
+            { keywords: ['fiction', 'novel', 'literary fiction'], genre: 'Fiction' },
+        ];
+        for (const { keywords, genre } of genreMap) {
+            if (keywords.some(kw => text.includes(kw))) return genre;
+        }
+        return '';
+    }
+
+    debounce(fn, delay) {
+        let timer;
+        return (...args) => {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn(...args), delay);
+        };
+    }
+
+    // ==========================================
+    // RECOMMENDATIONS ENGINE
+    // ==========================================
+    async getRecommendations() {
+        if (!this.currentUser) return [];
+
+        const stats = this.getStats(this.currentUser);
+        const allBooks = [...stats.finished, ...stats.currentlyReading, ...stats.wantToRead];
+        const readTitles = new Set(allBooks.map(b => b.title.toLowerCase().trim()));
+
+        // Build search queries based on user's favorite genres and authors
+        const topGenres = Object.entries(stats.genreCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([g]) => g);
+
+        const authors = [...new Set(stats.finished.map(b => b.author))].slice(0, 3);
+        const highRated = stats.finished
+            .filter(b => b.rating >= 4)
+            .slice(0, 3);
+
+        const searches = [];
+
+        // Search by top genres
+        for (const genre of topGenres) {
+            searches.push({ query: `subject:${genre}`, reason: `Because you love ${genre}` });
+        }
+
+        // Search by favorite authors
+        for (const author of authors) {
+            searches.push({ query: `author:${author}`, reason: `More from ${author}` });
+        }
+
+        // Search by highly rated books (similar)
+        for (const book of highRated) {
+            searches.push({ query: `${book.title}`, reason: `Similar to ${book.title}` });
+        }
+
+        if (searches.length === 0) {
+            searches.push({ query: 'popular fiction 2025', reason: 'Popular picks to get started' });
+            searches.push({ query: 'bestseller nonfiction', reason: 'Top non-fiction reads' });
+        }
+
+        // Pick 3-4 random searches to keep it fresh
+        const shuffled = searches.sort(() => Math.random() - 0.5).slice(0, 4);
+        const recommendations = [];
+
+        for (const search of shuffled) {
+            try {
+                const resp = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(search.query)}&limit=6&fields=title,author_name,cover_i,number_of_pages_median,first_publish_year,key`);
+                const data = await resp.json();
+                if (data.docs) {
+                    for (const d of data.docs) {
+                        if (!readTitles.has(d.title.toLowerCase().trim()) && d.cover_i) {
+                            recommendations.push({
+                                title: d.title,
+                                author: d.author_name ? d.author_name[0] : 'Unknown',
+                                pages: d.number_of_pages_median || 0,
+                                cover: `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`,
+                                reason: search.reason,
+                                key: d.key || ''
+                            });
+                            break; // One per search
+                        }
+                    }
+                }
+            } catch {
+                // Skip failed searches
+            }
+        }
+
+        return recommendations;
+    }
+
+    renderRecommendations() {
+        if (!this.currentUser) return '<p>Please log in to get recommendations.</p>';
+
+        return `
+        <div class="page-header animate-in">
+            <h1>Discover Books</h1>
+            <p class="page-subtitle">Personalized picks based on your reading taste</p>
+        </div>
+        <div id="recs-container">
+            <div class="rec-loading animate-in">Finding books you might love...</div>
+        </div>
+        <div style="text-align:center;margin-top:1rem">
+            <button class="btn btn-ghost" onclick="app.refreshRecommendations()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                Refresh Suggestions
+            </button>
+        </div>`;
+    }
+
+    async loadRecommendations() {
+        const container = document.getElementById('recs-container');
+        if (!container) return;
+
+        const recs = await this.getRecommendations();
+
+        if (recs.length === 0) {
+            container.innerHTML = `
+            <div class="rec-loading">
+                Add some books to your shelves first, and we'll suggest new reads based on your taste!
+            </div>`;
+            return;
+        }
+
+        container.innerHTML = `
+        <div class="recs-grid">
+            ${recs.map(r => `
+            <div class="rec-card animate-in">
+                <div class="rec-cover">
+                    ${r.cover ? `<img src="${this.escapeHtml(r.cover)}" alt="">` : ''}
+                </div>
+                <div class="rec-info">
+                    <div class="rec-title">${this.escapeHtml(r.title)}</div>
+                    <div class="rec-author">${this.escapeHtml(r.author)}</div>
+                    ${r.pages ? `<div class="rec-author">${r.pages} pages</div>` : ''}
+                    <div class="rec-reason">${this.escapeHtml(r.reason)}</div>
+                    <div class="rec-actions">
+                        <button class="btn btn-primary btn-sm" onclick='app.addRecToShelf(${JSON.stringify(r).replace(/'/g, "&#39;")})'>
+                            + Want to Read
+                        </button>
+                    </div>
+                </div>
+            </div>`).join('')}
+        </div>`;
+    }
+
+    refreshRecommendations() {
+        this.navigateTo('recommendations');
+    }
+
+    addRecToShelf(rec) {
+        if (!this.currentUser) return;
+        const books = this.getBooks(this.currentUser);
+
+        // Check if already on shelf
+        if (books.some(b => b.title.toLowerCase().trim() === rec.title.toLowerCase().trim())) {
+            this.showToast('This book is already on your shelf!');
+            return;
+        }
+
+        books.push({
+            id: this.generateId(),
+            title: rec.title,
+            author: rec.author,
+            pages: rec.pages || 0,
+            currentPage: 0,
+            dateStarted: '',
+            dateFinished: '',
+            genre: '',
+            rating: 0,
+            shelf: 'want-to-read',
+            cover: rec.cover || '',
+            notes: '',
+            addedAt: new Date().toISOString()
+        });
+
+        this.saveBooks(this.currentUser, books);
+        this.showToast(`"${rec.title}" added to Want to Read!`);
     }
 
     // ==========================================
@@ -848,9 +1172,11 @@ class BibliothequeApp {
 
             <form class="quick-add-form" onsubmit="app.saveBookFromPage(event)">
                 <div class="form-grid">
-                    <div class="form-group full-width">
+                    <div class="form-group full-width autocomplete-wrapper">
                         <label for="qa-title">Title *</label>
-                        <input type="text" id="qa-title" required placeholder="Enter book title">
+                        <input type="text" id="qa-title" required placeholder="Start typing a book title..." autocomplete="off">
+                        <div id="qa-title-dropdown" class="autocomplete-dropdown" style="display:none"></div>
+                        <div class="autocomplete-hint">Start typing to auto-fill book details</div>
                     </div>
                     <div class="form-group full-width">
                         <label for="qa-author">Author *</label>
