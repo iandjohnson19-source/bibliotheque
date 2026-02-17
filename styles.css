@@ -172,6 +172,16 @@ a {
     display: flex;
 }
 
+#app-screen {
+    min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+    #app-screen {
+        flex-direction: column;
+    }
+}
+
 /* ==============================
    LOGIN SCREEN
    ============================== */
@@ -837,6 +847,8 @@ a {
     min-height: 100vh;
     padding: 2rem 2.5rem;
     transition: margin var(--transition);
+    min-width: 0;
+    overflow-x: hidden;
 }
 
 .mobile-header {
@@ -1937,6 +1949,7 @@ a {
    RESPONSIVE DESIGN
    ============================== */
 @media (max-width: 768px) {
+    /* Sidebar slides off-screen */
     .sidebar {
         transform: translateX(-100%);
     }
@@ -1950,6 +1963,7 @@ a {
         display: block;
     }
 
+    /* Mobile header bar */
     .mobile-header {
         display: flex;
         align-items: center;
@@ -1967,36 +1981,117 @@ a {
         border: none;
         color: var(--text-primary);
         cursor: pointer;
-        padding: 4px;
+        padding: 8px;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .mobile-title {
         font-family: var(--font-serif);
         font-weight: 600;
         color: var(--gold);
+        font-size: 1rem;
     }
 
+    .theme-toggle-mobile {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Main content full-width */
     .main-content {
         margin-left: 0;
         padding: 1rem;
     }
 
+    /* Login screen */
+    .login-container {
+        padding: 1.5rem 1rem;
+    }
+
     .login-title {
-        font-size: 2.2rem;
+        font-size: 1.8rem;
+    }
+
+    .login-subtitle {
+        font-size: 1rem;
+    }
+
+    .login-header {
+        margin-bottom: 2rem;
+    }
+
+    .logo-icon {
+        width: 52px;
+        height: 52px;
+        margin-bottom: 1rem;
     }
 
     .login-cards {
         flex-direction: column;
         align-items: center;
+        gap: 1rem;
     }
 
     .login-card {
         width: 100%;
-        max-width: 280px;
+        max-width: 300px;
+        padding: 1.5rem 1.25rem;
+        flex-direction: row;
+        gap: 1rem;
+    }
+
+    .login-card-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .login-card-name {
+        font-size: 1rem;
+    }
+
+    .login-card-hint {
+        font-size: 0.75rem;
+    }
+
+    /* Modal improvements */
+    .modal-overlay {
+        padding: 0.5rem;
+        align-items: flex-end;
+    }
+
+    .modal {
+        padding: 1.5rem;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        max-height: 92vh;
+    }
+
+    .password-modal {
+        max-width: 100%;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .setup-modal {
+        max-width: 100%;
+    }
+
+    .book-modal {
+        max-width: 100%;
+    }
+
+    .cover-modal {
+        max-width: 100%;
     }
 
     .setup-grid {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
 
     .form-grid {
@@ -2007,18 +2102,67 @@ a {
         grid-column: 1;
     }
 
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .modal-actions {
+        flex-wrap: wrap;
     }
 
+    .modal-actions .btn {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    /* Dashboard stat cards */
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
+
+    .stat-card-value {
+        font-size: 1.5rem;
+    }
+
+    .stat-card-label {
+        font-size: 0.7rem;
+    }
+
+    /* Page header */
+    .page-header h1 {
+        font-size: 1.4rem;
+    }
+
+    .page-header .page-subtitle {
+        font-size: 0.9rem;
+    }
+
+    /* Fun fact */
+    .fun-fact {
+        padding: 1rem;
+        font-size: 0.9rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    /* Currently reading */
     .currently-reading-grid {
         grid-template-columns: 1fr;
     }
 
+    /* Charts */
     .charts-grid {
         grid-template-columns: 1fr;
     }
 
+    .chart-container {
+        height: 200px;
+    }
+
+    /* Comparison / Together page */
     .comparison-grid {
         grid-template-columns: 1fr;
     }
@@ -2027,35 +2171,365 @@ a {
         padding: 0.5rem 0;
     }
 
-    .books-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    .vs-badge {
+        width: 36px;
+        height: 36px;
+        font-size: 0.75rem;
     }
 
-    .recap-hero h1 {
-        font-size: 1.8rem;
+    .comparison-card {
+        padding: 1.25rem;
     }
 
-    .recap-big-stats {
-        grid-template-columns: repeat(2, 1fr);
+    .joint-header h1 {
+        font-size: 1.4rem;
     }
 
-    .heatmap-grid {
-        grid-template-columns: repeat(6, 1fr);
-    }
-}
-
-@media (max-width: 480px) {
-    .stats-grid {
+    /* Shared books */
+    .shared-book-list {
         grid-template-columns: 1fr;
     }
 
+    /* Books grid */
     .books-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 0.75rem;
     }
 
+    .book-card-body {
+        padding: 0.75rem;
+    }
+
+    .book-card-title {
+        font-size: 0.85rem;
+    }
+
+    .book-card-author {
+        font-size: 0.75rem;
+    }
+
+    /* Shelf tabs - scrollable on mobile */
+    .shelf-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        white-space: nowrap;
+        gap: 0;
+        padding-bottom: 0;
+    }
+
+    .shelf-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .shelf-tab {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        flex-shrink: 0;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Challenges */
+    .challenges-grid {
+        grid-template-columns: 1fr;
+    }
+
     .badge-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Recap */
+    .recap-hero {
+        padding: 2rem 1.25rem;
+    }
+
+    .recap-hero h1 {
+        font-size: 1.6rem;
+    }
+
+    .recap-hero p {
+        font-size: 0.95rem;
+    }
+
+    .recap-big-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .recap-big-stat .big-number {
+        font-size: 2rem;
+    }
+
+    .recap-big-stat .big-label {
+        font-size: 0.75rem;
+    }
+
+    .recap-user-toggle {
+        flex-wrap: wrap;
+    }
+
+    .recap-toggle-btn {
+        flex: 1;
+        min-width: 0;
+        text-align: center;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Recommendations */
+    .recs-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rec-card {
+        padding: 1rem;
+    }
+
+    /* Heatmap - show 4 months per row on mobile */
+    .heatmap-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
+
+    .heatmap-label {
+        font-size: 0.6rem;
+    }
+
+    /* Data page */
+    .data-page {
+        max-width: 100%;
+    }
+
+    .data-card .btn + .btn {
+        margin-left: 0;
+        margin-top: 0.5rem;
+    }
+
+    .data-card .btn {
+        display: block;
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+
+    /* Goal card */
+    .goal-card {
+        padding: 1.25rem;
+    }
+
+    .goal-header {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    /* Cover search */
+    .cover-results {
+        grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+    }
+
+    .cover-search-bar {
+        flex-direction: column;
+    }
+
+    .cover-search-bar .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Autocomplete dropdown */
+    .autocomplete-dropdown {
+        max-height: 220px;
+    }
+
+    /* Add book page */
+    .add-book-page {
+        max-width: 100%;
+    }
+
+    .quick-add-form .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-add-form .form-group.full-width {
+        grid-column: 1;
+    }
+
+    /* Section header */
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .section-header h2 {
+        font-size: 1.1rem;
+    }
+
+    /* Recap export */
+    .recap-export-section {
+        padding: 1.25rem;
+    }
+
+    /* Toast */
+    .toast {
+        bottom: 1rem;
+        left: 1rem;
+        right: 1rem;
+        transform: none;
+        text-align: center;
+    }
+
+    @keyframes toastIn {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+}
+
+@media (max-width: 480px) {
+    .login-title {
+        font-size: 1.5rem;
+    }
+
+    .login-subtitle {
+        font-size: 0.9rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card-value {
+        font-size: 1.3rem;
+    }
+
+    .books-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
+    .book-card-body {
+        padding: 0.5rem;
+    }
+
+    .book-card-title {
+        font-size: 0.8rem;
+    }
+
+    .book-card-author {
+        font-size: 0.7rem;
+    }
+
+    .badge-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
+    .badge-card {
+        padding: 0.75rem;
+    }
+
+    .badge-icon {
+        font-size: 2rem;
+    }
+
+    .badge-name {
+        font-size: 0.8rem;
+    }
+
+    .main-content {
+        padding: 0.75rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .recap-hero h1 {
+        font-size: 1.3rem;
+    }
+
+    .recap-big-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .recap-big-stat .big-number {
+        font-size: 1.75rem;
+    }
+
+    .heatmap-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .chart-container {
+        height: 180px;
+    }
+
+    .shared-book-card {
+        padding: 0.75rem;
+    }
+
+    .comparison-stat {
+        font-size: 0.8rem;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .modal {
+        padding: 1.25rem;
+    }
+
+    .modal h2 {
+        font-size: 1.2rem;
+    }
+
+    .reading-card {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+
+    .reading-card-cover {
+        width: 50px;
+        height: 75px;
+    }
+
+    /* Ensure all interactive elements have 44px touch targets */
+    .btn {
+        min-height: 44px;
+        padding: 10px 16px;
+    }
+
+    .btn-sm {
+        min-height: 36px;
+        padding: 6px 12px;
+    }
+
+    .star-rating .star {
+        font-size: 2rem;
+        padding: 4px;
+        min-width: 36px;
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-link {
+        padding: 12px 14px;
+        min-height: 44px;
+    }
+
+    .shelf-tab {
+        min-height: 44px;
+    }
+
+    select, input[type="text"], input[type="password"],
+    input[type="number"], input[type="url"], input[type="date"],
+    textarea {
+        font-size: 16px !important; /* Prevents iOS zoom on focus */
     }
 }
 
@@ -2119,8 +2593,11 @@ a {
     bottom: 0;
     background: rgba(0,0,0,0.5);
     z-index: 99;
+    opacity: 0;
+    transition: opacity var(--transition);
 }
 
-.sidebar.open ~ .sidebar-overlay {
+.sidebar-overlay.active {
     display: block;
+    opacity: 1;
 }

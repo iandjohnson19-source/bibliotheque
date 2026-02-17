@@ -262,11 +262,17 @@ class BibliothequeApp {
     }
 
     toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar.classList.toggle('open');
+        if (overlay) overlay.classList.toggle('active');
     }
 
     closeSidebar() {
-        document.getElementById('sidebar').classList.remove('open');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
     }
 
     // ==========================================
